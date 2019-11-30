@@ -77,7 +77,7 @@ public final class WorkerComputerOperation {
         int count ) {
         Map<Integer, List<Integer>> shardingDataMap = ResolutionUtils.sharding(shardingNum, count);
 
-        shardingDataMap.forEach(( sharding, shardingData ) -> workTaskQueue.addTask(
+        shardingDataMap.forEach(( sharding, shardingData ) -> workTaskQueue.register(
             () -> shardingData.forEach(
                 shardingNum -> workerContext.getShardingHander().execut(shardingNum, result -> {
                     if (joinResult.containsKey(workerContext.getHandlerClass())) {
@@ -91,7 +91,7 @@ public final class WorkerComputerOperation {
      */
     private <H extends ComputerHandler> void singleDealWith( WorkerContext<H> shardingContext,
         Map<Class<H>, Map<Integer, Object>> joinResult ) {
-        workTaskQueue.addTask(() -> {
+        workTaskQueue.register(() -> {
             shardingContext.getShardingHander().execut(result -> {
                 if (joinResult.containsKey(shardingContext.getHandlerClass())) {
                     joinResult.get(shardingContext.getHandlerClass()).put(shardingNum, result);

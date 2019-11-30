@@ -27,9 +27,9 @@ public final class WorkTaskQueue {
     private static final String THREAD_NAME = "default-sharding-thread";
 
     /**
-     * description 添加任务
+     * description 注册任务
      */
-    public void addTask(Runnable task) {
+    public void register(Runnable task) {
         taskCount.incrementAndGet();
         workTaskQueue.offer(task);
     }
