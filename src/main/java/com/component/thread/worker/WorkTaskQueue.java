@@ -2,6 +2,7 @@ package com.component.thread.worker;
 
 import com.component.thread.CustomThreadFactory;
 import com.component.thread.ThreadPoolProperties;
+
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -19,15 +20,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class WorkTaskQueue {
 
-    private Queue<Runnable> workTaskQueue =  new ConcurrentLinkedQueue<>();
+    private Queue<Runnable> workTaskQueue = new ConcurrentLinkedQueue<>();
 
     private AtomicInteger taskCount = new AtomicInteger(0);
     private static final String THREAD_GROUP_NAME = "default-sharding-group";
     private static final String THREAD_NAME = "default-sharding-thread";
+
     /**
      * description 添加任务
      */
-    public void addTask( Runnable task ) {
+    public void addTask(Runnable task) {
         taskCount.incrementAndGet();
         workTaskQueue.offer(task);
     }
@@ -35,24 +37,28 @@ public final class WorkTaskQueue {
     /**
      * description 提交任务
      */
-    public void submit( ThreadPoolProperties threadPoolProperties, int executeThreadNum ) {
+
+    public void submit() {
+        submit(new ThreadPoolProperties());
+    }
+
+    public void submit(ThreadPoolProperties threadPoolProperties) {
         CustomThreadFactory threadFactory = new CustomThreadFactory();
         threadFactory.bindingThreadGroup(new ThreadGroup(THREAD_GROUP_NAME), THREAD_NAME);
         ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-            threadPoolProperties.getCorePoolSize(),
-            threadPoolProperties.getMaximumPoolSize(),
-            threadPoolProperties.getKeepAliveTime(),
-            TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory);
+                threadPoolProperties.getCorePoolSize(),
+                threadPoolProperties.getMaximumPoolSize(),
+                threadPoolProperties.getKeepAliveTime(),
+                TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory);
         CountDownLatch countDownLatch = new CountDownLatch(taskCount.get());
-        Queue<FutureTask<Object>> workingTaskQueue = new ArrayBlockingQueue<>(executeThreadNum);
+        Queue<FutureTask<Object>> workingTaskQueue = new ArrayBlockingQueue<>(taskCount.get());
         int awaitTaskNum = taskCount.get();
-        int index = Math.min(awaitTaskNum, executeThreadNum);
-        for (int i = 0; i < index; i++) {
+        for (int i = 0; i < taskCount.get(); i++) {
             Runnable worker = workTaskQueue.poll();
             if (Objects.nonNull(worker)) {
                 FutureTask<Object> futureTask = new FutureTask<>(worker, null);
                 threadPoolExecutor.execute(threadFactory.newThread(futureTask));
-                awaitTaskNum --;
+                awaitTaskNum--;
                 workingTaskQueue.offer(futureTask);
             }
         }
