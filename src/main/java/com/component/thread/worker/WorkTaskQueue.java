@@ -3,8 +3,6 @@ package com.component.thread.worker;
 import com.component.thread.CustomThreadFactory;
 import com.component.thread.ThreadPoolProperties;
 import javafx.util.Pair;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -20,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @description: 业务工作队列 本身线程不安全；单线程操作，不能用于多线程嵌套使用
  */
-@Slf4j
 public final class WorkTaskQueue {
     /**
      * description 最大等待时间

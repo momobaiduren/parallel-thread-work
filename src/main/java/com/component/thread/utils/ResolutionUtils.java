@@ -39,7 +39,7 @@ public final class ResolutionUtils {
         try {
             TimeUnit.MILLISECONDS.sleep(milliseconds);
         } catch (InterruptedException e) {
-            log.error(e.getMessage());
+            System.err.println(e.getMessage());
         }
     }
 }
