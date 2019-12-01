@@ -29,8 +29,7 @@ public final class WorkerComputerOperation {
 
     private WorkTaskQueue workTaskQueue;
 
-    private WorkerComputerOperation() {
-    }
+    private WorkerComputerOperation() {}
 
     public static WorkerComputerOperation instance() {
         return new WorkerComputerOperation();
