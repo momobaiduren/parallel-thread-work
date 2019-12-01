@@ -23,10 +23,6 @@ public final class WorkTaskQueue {
      * description 线程队列
      */
     private Queue<Runnable> workTaskQueue = new ConcurrentLinkedQueue<>();
-    /**
-     * description 线程队列记录数
-     */
-    private AtomicInteger taskCount = new AtomicInteger(0);
 
     private static final String THREAD_GROUP_NAME = "default-worker-task-group";
 
@@ -54,7 +50,7 @@ public final class WorkTaskQueue {
      * description 注册任务 线程安全同步
      */
     public void register(Runnable task) {
-        taskCount.incrementAndGet();
+        Objects.requireNonNull(task, "task could not be null");
         workTaskQueue.offer(task);
     }
 
@@ -64,41 +60,40 @@ public final class WorkTaskQueue {
     private ThreadFactory threadFactory;
 
     private ThreadPoolExecutor threadPoolExecutor;
+
     /**
      * description 提交任务
      */
     public void submit() {
         submit(new ThreadPoolProperties());
     }
+
     /**
      * create by ZhangLong on 2019/12/1
      * description 提交任务
      */
     public void submit(ThreadPoolProperties threadPoolProperties) {
         initThreadPool(threadPoolProperties);
-        CountDownLatch countDownLatch = new CountDownLatch(taskCount.get());
-        Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue = new ArrayBlockingQueue<>(taskCount.get());
-        int awaitTaskNum = futureTaskExecution(workingTaskQueue);
+        Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue = new ConcurrentLinkedDeque<>();
+        futureTaskExecution(workingTaskQueue);
         //监控线程执行任务
-        futureTaskExecutionListener(countDownLatch, workingTaskQueue, awaitTaskNum);
+        futureTaskExecutionListener(workingTaskQueue);
         threadPoolExecutor.shutdown();
     }
+
     /**
      * create by ZhangLong on 2019/12/1
      * description 执行任务
+     *
+     * @param workingTaskQueue
      */
-    private int futureTaskExecution(Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue) {
-        int awaitTaskNum = taskCount.get();
-        for (int i = 0; i < taskCount.get(); i++) {
-            Runnable worker = workTaskQueue.poll();
-            if (Objects.nonNull(worker)) {
-                FutureTask<Object> futureTask = new FutureTask<>(worker, null);
-                threadPoolExecutor.execute(threadFactory.newThread(futureTask));
-                workingTaskQueue.offer(new Pair<>(futureTask, System.currentTimeMillis()));
-                awaitTaskNum--;
-            }
+    private void futureTaskExecution(Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue) {
+        Runnable worker;
+        while (Objects.nonNull(worker = workTaskQueue.poll())) {
+            FutureTask<Void> futureTask = new FutureTask<>(worker, null);
+            threadPoolExecutor.execute(threadFactory.newThread(futureTask));
+            workingTaskQueue.offer(new Pair<>(futureTask, System.currentTimeMillis()));
         }
-        return awaitTaskNum;
     }
 
     /**
@@ -124,32 +119,21 @@ public final class WorkTaskQueue {
      * create by ZhangLong on 2019/12/1
      * description 任务执行监控执行结束或超时结束
      */
-    private void futureTaskExecutionListener(CountDownLatch countDownLatch,
-                                             Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue,
-                                             int awaitTaskNum) {
-        while (countDownLatch.getCount() != 0) {
-            Pair<FutureTask<Object>, Long> futureTaskLongPair = workingTaskQueue.poll();
-            assert futureTaskLongPair != null;
+    private void futureTaskExecutionListener(Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue) {
+        Pair<FutureTask<Void>, Long> futureTaskLongPair;
+        while (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
             if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {
-                //超时了
+                //超时处理
                 futureTaskLongPair.getKey().cancel(true);
                 System.err.println("线程执行超时,已取消");
-                countDownLatch.countDown();
                 continue;
             }
             if (Objects.requireNonNull(futureTaskLongPair.getKey()).isDone()) {
-                countDownLatch.countDown();
-                if (awaitTaskNum > 0) {
-                    Runnable worker = workTaskQueue.poll();
-                    if (Objects.nonNull(worker)) {
-                        FutureTask<Object> futureTask = new FutureTask<>(worker, null);
-                        threadPoolExecutor.execute(threadFactory.newThread(futureTask));
-                        workingTaskQueue.offer(futureTaskLongPair);
-                    }
-                }
+                futureTaskExecution(workingTaskQueue);
             } else {
                 workingTaskQueue.offer(futureTaskLongPair);
             }
         }
+
     }
 }
