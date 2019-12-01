@@ -52,7 +52,7 @@ public final class WorkerComputerOperation {
             mergeResult.put(shardingContext.getHandlerClass(), new ConcurrentHashMap<>());
             dealWith(shardingContext, mergeResult);
         }
-        workTaskQueue.submit(new ThreadPoolProperties(), shardingNum);
+        workTaskQueue.submit();
         if (Objects.nonNull(consumer)) {
             consumer.accept(mergeResult);
         }
