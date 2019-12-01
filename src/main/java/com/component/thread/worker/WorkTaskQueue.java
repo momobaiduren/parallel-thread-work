@@ -1,16 +1,11 @@
 package com.component.thread.worker;
 
-import com.component.thread.CustomThreadFactory;
 import com.component.thread.ThreadPoolProperties;
 import javafx.util.Pair;
+
 import java.util.Objects;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @description: 业务工作队列 本身线程不安全；单线程操作，不能用于多线程嵌套使用
  * 在使用多线程时要考虑线程开销和正常业务开销的相对性，管理线程的开销比业务开销大，就不建议使用多线程
- *
  */
 public final class WorkTaskQueue {
     /**
@@ -29,8 +23,12 @@ public final class WorkTaskQueue {
      * description 线程队列
      */
     private Queue<Runnable> workTaskQueue = new ConcurrentLinkedQueue<>();
-
+    /**
+     * description 线程队列记录数
+     */
     private AtomicInteger taskCount = new AtomicInteger(0);
+
+    private static final String THREAD_GROUP_NAME = "default-worker-task-group";
 
     /**
      * create by ZhangLong on 2019/11/30
@@ -60,43 +58,75 @@ public final class WorkTaskQueue {
         workTaskQueue.offer(task);
     }
 
+
+    private ThreadGroup threadGroup;
+
+    private ThreadFactory threadFactory;
+
+    private ThreadPoolExecutor threadPoolExecutor;
     /**
      * description 提交任务
      */
-
     public void submit() {
         submit(new ThreadPoolProperties());
     }
-
+    /**
+     * create by ZhangLong on 2019/12/1
+     * description 提交任务
+     */
     public void submit(ThreadPoolProperties threadPoolProperties) {
-        CustomThreadFactory threadFactory = new CustomThreadFactory();
-        threadFactory.bindingThreadGroup(new ThreadGroup(threadPoolProperties.getThreadGroupName()));
-        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                threadPoolProperties.getCorePoolSize(),
-                threadPoolProperties.getMaximumPoolSize(),
-                threadPoolProperties.getKeepAliveTime(),
-                TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory);
+        initThreadPool(threadPoolProperties);
         CountDownLatch countDownLatch = new CountDownLatch(taskCount.get());
         Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue = new ArrayBlockingQueue<>(taskCount.get());
-        int awaitTaskNum1 = taskCount.get();
+        int awaitTaskNum = futureTaskExecution(workingTaskQueue);
+        //监控线程执行任务
+        futureTaskExecutionListener(countDownLatch, workingTaskQueue, awaitTaskNum);
+        threadPoolExecutor.shutdown();
+    }
+    /**
+     * create by ZhangLong on 2019/12/1
+     * description 执行任务
+     */
+    private int futureTaskExecution(Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue) {
+        int awaitTaskNum = taskCount.get();
         for (int i = 0; i < taskCount.get(); i++) {
             Runnable worker = workTaskQueue.poll();
             if (Objects.nonNull(worker)) {
                 FutureTask<Object> futureTask = new FutureTask<>(worker, null);
                 threadPoolExecutor.execute(threadFactory.newThread(futureTask));
                 workingTaskQueue.offer(new Pair<>(futureTask, System.currentTimeMillis()));
-                awaitTaskNum1--;
+                awaitTaskNum--;
             }
         }
-        int awaitTaskNum = awaitTaskNum1;
-        //监控线程执行任务
-        futureTaskExecutionListener(threadFactory, threadPoolExecutor,
-                countDownLatch, workingTaskQueue, awaitTaskNum);
-        threadPoolExecutor.shutdown();
+        return awaitTaskNum;
     }
 
-    private void futureTaskExecutionListener(CustomThreadFactory threadFactory, ThreadPoolExecutor threadPoolExecutor,
-                                             CountDownLatch countDownLatch, Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue, int awaitTaskNum) {
+    /**
+     * create by ZhangLong on 2019/12/1
+     * description 初始化线程池
+     */
+    private void initThreadPool(ThreadPoolProperties threadPoolProperties) {
+        threadFactory = target -> {
+            Objects.requireNonNull(target, "runable could not be null");
+            if (Objects.isNull(threadGroup)) {
+                threadGroup = new ThreadGroup(THREAD_GROUP_NAME);
+            }
+            return new Thread(threadGroup, target);
+        };
+        threadPoolExecutor = new ThreadPoolExecutor(
+                threadPoolProperties.getCorePoolSize(),
+                threadPoolProperties.getMaximumPoolSize(),
+                threadPoolProperties.getKeepAliveTime(),
+                TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory);
+    }
+
+    /**
+     * create by ZhangLong on 2019/12/1
+     * description 任务执行监控执行结束或超时结束
+     */
+    private void futureTaskExecutionListener(CountDownLatch countDownLatch,
+                                             Queue<Pair<FutureTask<Object>, Long>> workingTaskQueue,
+                                             int awaitTaskNum) {
         while (countDownLatch.getCount() != 0) {
             Pair<FutureTask<Object>, Long> futureTaskLongPair = workingTaskQueue.poll();
             assert futureTaskLongPair != null;
