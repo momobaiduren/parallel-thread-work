@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * created by zhanglong and since  2019/11/17  11:09 上午
  *
  * @description: 业务工作队列 本身线程不安全；单线程操作，不能用于多线程嵌套使用
+ * 在使用多线程时要考虑线程开销和正常业务开销的相对性，管理线程的开销比业务开销大，就不建议使用多线程
+ *
  */
 public final class WorkTaskQueue {
     /**
