@@ -48,15 +48,21 @@ public final class WorkerComputerOperation {
         Objects.requireNonNull(workerContexts, "workerContexts could not be null");
         workTaskQueue = new WorkTaskQueue();
         Map<Class<H>, Map<Integer, Object>> mergeResult = new ConcurrentHashMap<>();
-        for (WorkerContext<H> shardingContext : workerContexts) {
-            mergeResult.put(shardingContext.getHandlerClass(), new ConcurrentHashMap<>());
-            dealWith(shardingContext, mergeResult);
-        }
-        workTaskQueue.submit();
-        if (Objects.nonNull(consumer)) {
-            consumer.accept(mergeResult);
+        try {
+            for (WorkerContext<H> shardingContext : workerContexts) {
+                mergeResult.put(shardingContext.getHandlerClass(), new ConcurrentHashMap<>());
+                dealWith(shardingContext, mergeResult);
+            }
+            workTaskQueue.submit();
+            if (Objects.nonNull(consumer)) {
+                consumer.accept(mergeResult);
+            }
+        } finally {
+            //释放资源
+            ResolutionUtils.releaseSource(workTaskQueue, mergeResult, workerContexts);
         }
     }
+
     /**
      * description 处理
      */

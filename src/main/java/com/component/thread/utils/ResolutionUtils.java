@@ -1,9 +1,6 @@
 package com.component.thread.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,11 +32,19 @@ public final class ResolutionUtils {
     /**
      * description cpu资源释放
      */
-    static void releaseCpuSource( long milliseconds ) {
+    public static void releaseCpuSource( long milliseconds ) {
         try {
             TimeUnit.MILLISECONDS.sleep(milliseconds);
         } catch (InterruptedException e) {
             System.err.println(e.getMessage());
         }
     }
+
+    public static void releaseSource(Object... objs) {
+        if (Objects.nonNull(objs)) {
+            Arrays.fill(objs, null);
+        }
+    }
+
+
 }

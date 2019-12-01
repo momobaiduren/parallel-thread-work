@@ -1,6 +1,7 @@
 package com.component.thread.worker;
 
 import com.component.thread.ThreadPoolProperties;
+import com.component.thread.utils.ResolutionUtils;
 import javafx.util.Pair;
 
 import java.util.Objects;
@@ -75,10 +76,14 @@ public final class WorkTaskQueue {
     public void submit(ThreadPoolProperties threadPoolProperties) {
         initThreadPool(threadPoolProperties);
         Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue = new ConcurrentLinkedDeque<>();
-        futureTaskExecution(workingTaskQueue);
-        //监控线程执行任务
-        futureTaskExecutionListener(workingTaskQueue);
-        threadPoolExecutor.shutdown();
+        try {
+            futureTaskExecution(workingTaskQueue);
+            //监控线程执行任务
+            futureTaskExecutionListener(workingTaskQueue);
+            threadPoolExecutor.shutdown();
+        } finally {
+            ResolutionUtils.releaseSource(threadPoolExecutor, threadFactory, threadGroup, workTaskQueue, workingTaskQueue);
+        }
     }
 
     /**
