@@ -122,10 +122,11 @@ public final class WorkTaskQueue {
 
     /**
      * create by ZhangLong on 2019/12/1
-     * description 任务执行监控执行结束或超时结束
+     * description 任务执行监控执行结束或超时结束，用于阻塞等待结果集
      */
     private void futureTaskExecutionListener(Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue) {
         Pair<FutureTask<Void>, Long> futureTaskLongPair;
+        //做阻塞等待结果集获取
         while (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
             if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {
                 //超时处理
@@ -133,6 +134,7 @@ public final class WorkTaskQueue {
                 System.err.println("线程执行超时,已取消");
                 continue;
             }
+            //调用isDone阻塞线程
             if (Objects.requireNonNull(futureTaskLongPair.getKey()).isDone()) {
                 futureTaskExecution(workingTaskQueue);
             } else {
