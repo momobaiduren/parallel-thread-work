@@ -1,15 +1,18 @@
 package com.component.thread.utils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * created by zhanglong and since  2019/11/14  5:52 下午
  *
  * @description: 数据分割处理
  */
-@Slf4j
 public final class ResolutionUtils {
     private ResolutionUtils(){}
     /**
