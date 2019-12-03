@@ -120,7 +120,7 @@ public final class WorkTaskQueue {
             threadPoolProperties.getKeepAliveTime(),
             TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory,
             ( target, executor ) -> {
-                throw new RuntimeException("Thread pool is exhausted!");
+                throw new RuntimeException("Thread pool is exhausted, or thread pool is too little! current task num is " + executor.getTaskCount());
             });
     }
 
