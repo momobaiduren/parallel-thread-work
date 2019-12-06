@@ -18,7 +18,7 @@ public class ThreadPoolProperties {
     /**
      * description 核心线程数，太大会导致线程上下文切换的消耗
      */
-    private int corePoolSize = 0;
+    private int corePoolSize = 5;
     /**
      * description 最大线程数
      */
@@ -29,6 +29,7 @@ public class ThreadPoolProperties {
     private long keepAliveTime = 60;
     /**
      * description 线程队列类型 初始化构造不设置队列长度默认65535
+     * SynchronousQueue 不存储数据的阻塞队列每个put提供操作必须等待take消费操作否则不能继续添加
      */
     private BlockingQueue<Runnable> workQuezue = new SynchronousQueue<>();
 
@@ -36,4 +37,8 @@ public class ThreadPoolProperties {
      * description 自定义线程分组名称
      */
     private String threadGroupName = "default-thread-group";
+    /**
+     * description 是否默认启动所有基本线程（corePoolSize大于零的情况）
+     */
+    private boolean perStartAllCoreThread;
 }

@@ -46,7 +46,7 @@ public final class WorkerComputerOperation {
         WorkerContext<H>... workerContexts ) {
         Objects.requireNonNull(workerContexts, "workerContexts could not be null");
         workTaskQueue = new WorkTaskQueue();
-        Map<Class<H>, Map<Integer, Object>> mergeResult = new ConcurrentHashMap<>();
+        Map<Class<H>, Map<Integer, Object>> mergeResult = new ConcurrentHashMap<>(workerContexts.length);
         try {
             for (WorkerContext<H> shardingContext : workerContexts) {
                 mergeResult.put(shardingContext.getHandlerClass(), new ConcurrentHashMap<>());

@@ -17,11 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class WorkTaskQueue {
 
     /**
-     * description 最大等待时间
+     * description 最大等待时间ms
      */
     private long maxWait = 60000L;
     /**
-     * description 线程队列
+     * description 线程队列,
+     * ConcurrentLinkedQueue 非阻塞无边界队列，线程安全的，执行效率比较高
      */
     private Queue<Runnable> workTaskQueue = new ConcurrentLinkedQueue<>();
 
@@ -73,7 +74,7 @@ public final class WorkTaskQueue {
      */
     public void submit( ThreadPoolProperties threadPoolProperties ) {
         initThreadPool(threadPoolProperties);
-        Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue = new ConcurrentLinkedDeque<>();
+        Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue = new ConcurrentLinkedQueue<>();
         try {
             futureTaskExecution(workingTaskQueue);
             //监控线程执行任务
@@ -120,12 +121,16 @@ public final class WorkTaskQueue {
             threadPoolProperties.getKeepAliveTime(),
             TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory,
             ( target, executor ) -> {
-                throw new RuntimeException("Thread pool is exhausted, or thread pool is too little! current task num is " + executor.getTaskCount());
+                throw new UnsupportedOperationException("Thread pool is exhausted, or thread pool is too little! current task num is " + executor.getTaskCount());
             });
+        if(threadPoolProperties.getCorePoolSize() > 0 && threadPoolProperties.isPerStartAllCoreThread()) {
+            threadPoolExecutor.prestartAllCoreThreads();
+        }
     }
 
     /**
      * create by ZhangLong on 2019/12/1 description 任务执行监控执行结束或超时结束，用于阻塞等待结果集
+     *
      */
     private void futureTaskExecutionListener(
         Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue ) {
