@@ -7,7 +7,6 @@ import javafx.util.Pair;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * created by zhanglong and since  2019/11/17  11:09 上午
@@ -21,8 +20,7 @@ public final class WorkTaskQueue {
      */
     private long maxWait = 60000L;
     /**
-     * description 线程队列,
-     * ConcurrentLinkedQueue 非阻塞无边界队列，线程安全的，执行效率比较高
+     * description 线程队列, ConcurrentLinkedQueue 非阻塞无边界队列，线程安全的，执行效率比较高
      */
     private Queue<Runnable> workTaskQueue = new ConcurrentLinkedQueue<>();
 
@@ -74,7 +72,7 @@ public final class WorkTaskQueue {
      */
     public void submit( ThreadPoolProperties threadPoolProperties ) {
         initThreadPool(threadPoolProperties);
-        Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue = new ConcurrentLinkedQueue<>();
+        Queue<Pair<Future, Long>> workingTaskQueue = new ConcurrentLinkedQueue<>();
         try {
             futureTaskExecution(workingTaskQueue);
             //监控线程执行任务
@@ -90,17 +88,15 @@ public final class WorkTaskQueue {
     /**
      * create by ZhangLong on 2019/12/1 description 执行任务
      */
-    private void futureTaskExecution( Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue ) {
+    private void futureTaskExecution( Queue<Pair<Future, Long>> workingTaskQueue ) {
         Runnable worker;
         while (Objects.nonNull(worker = workTaskQueue.poll())) {
-            FutureTask<Void> futureTask = new FutureTask<>(worker, null);
-            try {
-                threadPoolExecutor.execute(threadFactory.newThread(futureTask));
-            } catch (Exception e) {
-                futureTask.cancel(true);
+            final Future future = threadPoolExecutor
+                .submit(threadFactory.newThread(worker));
+            if (future.isCancelled()) {
                 continue;
             }
-            workingTaskQueue.offer(new Pair<>(futureTask, System.currentTimeMillis()));
+            workingTaskQueue.offer(new Pair<>(future, System.currentTimeMillis()));
         }
     }
 
@@ -121,20 +117,21 @@ public final class WorkTaskQueue {
             threadPoolProperties.getKeepAliveTime(),
             TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory,
             ( target, executor ) -> {
-                throw new UnsupportedOperationException("Thread pool is exhausted, or thread pool is too little! current task num is " + executor.getTaskCount());
+                throw new UnsupportedOperationException(
+                    "Thread pool is exhausted, or thread pool is too little! current task num is "
+                        + executor.getTaskCount());
             });
-        if(threadPoolProperties.getCorePoolSize() > 0 && threadPoolProperties.isPerStartAllCoreThread()) {
+        if (threadPoolProperties.getCorePoolSize() > 0 && threadPoolProperties
+            .isPerStartAllCoreThread()) {
             threadPoolExecutor.prestartAllCoreThreads();
         }
     }
 
     /**
      * create by ZhangLong on 2019/12/1 description 任务执行监控执行结束或超时结束，用于阻塞等待结果集
-     *
      */
-    private void futureTaskExecutionListener(
-        Queue<Pair<FutureTask<Void>, Long>> workingTaskQueue ) {
-        Pair<FutureTask<Void>, Long> futureTaskLongPair;
+    private void futureTaskExecutionListener( Queue<Pair<Future, Long>> workingTaskQueue ) {
+        Pair<Future, Long> futureTaskLongPair;
         //做阻塞等待结果集获取
         while (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
             if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {

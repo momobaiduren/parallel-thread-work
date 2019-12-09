@@ -18,7 +18,7 @@ public class ThreadPoolProperties {
     /**
      * description 核心线程数，太大会导致线程上下文切换的消耗
      */
-    private int corePoolSize = 5;
+    private int corePoolSize = 10;
     /**
      * description 最大线程数
      */
