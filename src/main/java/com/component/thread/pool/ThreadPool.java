@@ -48,12 +48,8 @@ public final class ThreadPool {
             threadPoolProperties.getCorePoolSize(),
             threadPoolProperties.getMaxPoolSize(),
             threadPoolProperties.getKeepAliveTime(),
-            TimeUnit.SECONDS, threadPoolProperties.getWorkQuezue(), threadFactory,
-            ( target, executor ) -> {
-                throw new UnsupportedOperationException(
-                    "Thread pool is exhausted, or thread pool is too little! current task num is "
-                        + executor.getTaskCount());
-            });
+            TimeUnit.SECONDS, threadPoolProperties.getWorkQueue(), threadFactory,
+            threadPoolProperties.getRejectedExecutionHandler());
         if (threadPoolProperties.isPerStartAllCoreThread()
             && threadPoolProperties.getCorePoolSize() > 0) {
             threadPoolExecutor.prestartAllCoreThreads();
@@ -67,8 +63,8 @@ public final class ThreadPool {
         threadPoolExecutor.shutdown();
     }
 
-    public void releaseSource(){
-        if(threadPoolExecutor.isTerminated()) {
+    public void releaseSource() {
+        if (threadPoolExecutor.isTerminated()) {
             ResolutionUtils.releaseSource(threadPoolExecutor, threadFactory);
         }
     }

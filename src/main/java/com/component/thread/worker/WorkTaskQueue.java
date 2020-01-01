@@ -31,7 +31,7 @@ public final class WorkTaskQueue {
     private Queue<Runnable> workTaskQueue = new ConcurrentLinkedQueue<>();
 
     /**
-     * create by ZhangLong on 2019/11/30 description 每个任务超时时间默认值为60000ms
+     * description 每个任务超时时间默认值为无限时常
      */
     public WorkTaskQueue() {
         this.maxWait = Long.MAX_VALUE;
@@ -40,7 +40,7 @@ public final class WorkTaskQueue {
     /**
      * create by ZhangLong on 2019/11/30
      *
-     * @param maxWait 小于0执行任务没有超时,轮训处理
+     * @param maxWait 小于等于0执行任务没有超时,轮训处理
      */
     public WorkTaskQueue( long maxWait ) {
         if (maxWait <= 0) {
