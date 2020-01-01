@@ -2,11 +2,11 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/MainExecutor.java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/ThreadPoolProperties.java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/execute/WorkerComputerOperation.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/handler/ComputerHandler.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/pool/ThreadPoolProperties.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/sharding/ShardingComputerOperation.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/sharding/ShardingContext.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/utils/ResolutionUtils.java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/worker/WorkTaskQueue.java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/main/java/com/component/thread/worker/WorkerContext.java" charset="UTF-8" />
   </component>
 </project>

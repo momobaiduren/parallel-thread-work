@@ -22,7 +22,7 @@ public final class WorkTaskQueue {
      */
     private long maxWait;
     /**
-     * description 线程使用监控，监控工作窃取
+     * description 线程使用监控，监控工作窃取,防止线程溢出最大线程数
      */
     private AtomicInteger runningFlag = new AtomicInteger(0);
     /**
@@ -34,6 +34,7 @@ public final class WorkTaskQueue {
      * create by ZhangLong on 2019/11/30 description 每个任务超时时间默认值为60000ms
      */
     public WorkTaskQueue() {
+        this.maxWait = Long.MAX_VALUE;
     }
 
     /**
@@ -84,44 +85,47 @@ public final class WorkTaskQueue {
      */
     private void executionTask( ThreadPoolProperties threadPoolProperties, ThreadPool threadPool,
         Queue<Pair<Future, Long>> workingTaskQueue ) {
-        Runnable worker;
-        while (runningFlag.get() < threadPoolProperties.getMaxPoolSize() && Objects
-            .nonNull(worker = workTaskQueue.poll())) {
-            final Future future = threadPool.submit(worker);
-            runningFlag.incrementAndGet();
-            if (future.isCancelled()) {
-                runningFlag.decrementAndGet();
-                continue;
+        while (workTaskQueue.size() > 0) {
+            if (runningFlag.get() < threadPoolProperties.getMaxPoolSize()) {
+                final Future future = threadPool.submit(workTaskQueue.poll());
+                runningFlag.incrementAndGet();
+                if (future.isCancelled()) {
+                    runningFlag.decrementAndGet();
+                    continue;
+                }
+                workingTaskQueue.offer(new Pair<>(future, System.currentTimeMillis()));
             }
-            workingTaskQueue.offer(new Pair<>(future, System.currentTimeMillis()));
-        }
-        //监控线程执行任务
-        monitorTask(threadPoolProperties, threadPool, workingTaskQueue);
-    }
-
-    /**
-     * description 监控任务
-     */
-    private void monitorTask( ThreadPoolProperties threadPoolProperties, ThreadPool threadPool,
-        Queue<Pair<Future, Long>> workingTaskQueue ) {
-        Pair<Future, Long> futureTaskLongPair;
-        while (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
-            if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {
-                //超时处理
-                futureTaskLongPair.getKey().cancel(true);
-                System.err.println("线程执行超时,已取消");
-                runningFlag.decrementAndGet();
-                continue;
-            }
-            //调用isDone阻塞线程
-            if (Objects.requireNonNull(futureTaskLongPair.getKey()).isDone()) {
-                runningFlag.decrementAndGet();
-                executionTask(threadPoolProperties, threadPool, workingTaskQueue);
-            } else {
-                workingTaskQueue.offer(futureTaskLongPair);
+            //监控线程执行任务
+            Pair<Future, Long> futureTaskLongPair;
+            if (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
+                if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {
+                    //超时处理
+                    futureTaskLongPair.getKey().cancel(true);
+                    System.out.println(maxWait);
+                    System.err.println("线程执行超时,已取消");
+                    runningFlag.decrementAndGet();
+                    continue;
+                }
+                //调用isDone阻塞线程
+                if (Objects.requireNonNull(futureTaskLongPair.getKey()).isDone()) {
+                    runningFlag.decrementAndGet();
+                } else {
+                    workingTaskQueue.offer(futureTaskLongPair);
+                }
             }
         }
+
     }
 
+    public static void main( String[] args ) {
+        final WorkTaskQueue workTaskQueue = new WorkTaskQueue();
+        System.out.println(workTaskQueue.maxWait);
+        for (int i = 0; i < 100000; i++) {
+            int finalI = i;
+            workTaskQueue.register(()->System.out.println("我是任务"+ finalI));
+        }
+        workTaskQueue.submit();
+
+    }
 
 }
