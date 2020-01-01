@@ -1,4 +1,4 @@
-package com.component.thread.worker;
+package com.component.thread.sharding;
 
 import com.component.thread.handler.ComputerHandler;
 import lombok.AllArgsConstructor;
@@ -11,7 +11,7 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor
-public class WorkerContext<H extends ComputerHandler> {
+public class ShardingContext<H extends ComputerHandler> {
     /**
      * description 执行器的class
      */

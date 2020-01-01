@@ -1,4 +1,4 @@
-package com.component.thread;
+package com.component.thread.pool;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -22,7 +22,7 @@ public class ThreadPoolProperties {
     /**
      * description 最大线程数
      */
-    private int maximumPoolSize = Runtime.getRuntime().availableProcessors() * 10;
+    private int maxPoolSize = Runtime.getRuntime().availableProcessors() * 10;
     /**
      * description 空闲线程存活时间
      */
@@ -41,4 +41,8 @@ public class ThreadPoolProperties {
      * description 是否默认启动所有基本线程（corePoolSize大于零的情况）
      */
     private boolean perStartAllCoreThread;
+    /**
+     * description 线程组标示线程资源的使用范围，也用于线程调试
+     */
+    private ThreadGroup threadGroup;
 }

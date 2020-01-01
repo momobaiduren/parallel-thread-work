@@ -42,7 +42,9 @@ public final class ResolutionUtils {
             System.err.println(e.getMessage());
         }
     }
-
+    /**
+     * description 释放资源
+     */
     public static void releaseSource(Object... objs) {
         if (Objects.nonNull(objs)) {
             Arrays.fill(objs, null);
