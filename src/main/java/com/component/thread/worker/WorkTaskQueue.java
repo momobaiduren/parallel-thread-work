@@ -96,33 +96,36 @@ public final class WorkTaskQueue {
                 workingTaskQueue.offer(new Pair<>(future, System.currentTimeMillis()));
             }
             //监控线程执行任务
-            Pair<Future, Long> futureTaskLongPair;
-            if (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
-                if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {
-                    //超时处理
-                    futureTaskLongPair.getKey().cancel(true);
-                    System.out.println(maxWait);
-                    System.err.println("线程执行超时,已取消");
-                    runningFlag.decrementAndGet();
-                    continue;
-                }
-                //调用isDone阻塞线程
-                if (Objects.requireNonNull(futureTaskLongPair.getKey()).isDone()) {
-                    runningFlag.decrementAndGet();
-                } else {
-                    workingTaskQueue.offer(futureTaskLongPair);
-                }
-            }
+            monitorTask(workingTaskQueue);
         }
 
+    }
+
+    private void monitorTask( Queue<Pair<Future, Long>> workingTaskQueue ) {
+        Pair<Future, Long> futureTaskLongPair;
+        if (Objects.nonNull(futureTaskLongPair = workingTaskQueue.poll())) {
+            if (System.currentTimeMillis() - futureTaskLongPair.getValue() > maxWait) {
+                //超时处理
+                futureTaskLongPair.getKey().cancel(true);
+                System.err.println("线程执行超时,已取消");
+                runningFlag.decrementAndGet();
+                return;
+            }
+            //调用isDone阻塞线程
+            if (Objects.requireNonNull(futureTaskLongPair.getKey()).isDone()) {
+                runningFlag.decrementAndGet();
+            } else {
+                workingTaskQueue.offer(futureTaskLongPair);
+            }
+        }
     }
 
     public static void main( String[] args ) {
         final WorkTaskQueue workTaskQueue = new WorkTaskQueue();
         System.out.println(workTaskQueue.maxWait);
         for (int i = 0; i < 100000; i++) {
-            int finalI = i;
-            workTaskQueue.register(()->System.out.println("我是任务"+ finalI));
+            int finale = i;
+            workTaskQueue.register(()->System.out.println("我是任务"+ finale));
         }
         workTaskQueue.submit();
 
