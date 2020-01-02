@@ -9,11 +9,6 @@ import java.util.function.Consumer;
  */
 public interface ComputerHandler {
 
-    default void banchExecute( List<Integer> shardingData,
-        Consumer<Object> resultConsumer, Object conditions ) {
-        shardingData.forEach(sharding -> execut(sharding, resultConsumer, conditions));
-    }
-
     /**
      * created by zhanglong and since  2019/11/15 4:17 下午 该方法是不进行分片处理的，而是直接处理
      */

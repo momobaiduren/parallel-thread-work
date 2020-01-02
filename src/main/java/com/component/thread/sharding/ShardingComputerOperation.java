@@ -81,8 +81,7 @@ public final class ShardingComputerOperation {
      * description 并行处理
      */
     private <H extends ComputerHandler> void parallelDealWith(
-        ShardingContext<H> workerContext, Map<Class<H>, Map<Integer, Object>> joinResult,
-        int count ) {
+        ShardingContext<H> workerContext, Map<Class<H>, Map<Integer, Object>> joinResult, int count ) {
         Map<Integer, List<Integer>> shardingDataMap = ResolutionUtils.sharding(shardingNum, count);
 
         shardingDataMap.forEach(( sharding, shardingData ) -> workTaskQueue.register(

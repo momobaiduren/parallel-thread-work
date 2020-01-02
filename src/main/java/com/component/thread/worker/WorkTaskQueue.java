@@ -120,15 +120,4 @@ public final class WorkTaskQueue {
         }
     }
 
-    public static void main( String[] args ) {
-        final WorkTaskQueue workTaskQueue = new WorkTaskQueue();
-        System.out.println(workTaskQueue.maxWait);
-        for (int i = 0; i < 100000; i++) {
-            int finale = i;
-            workTaskQueue.register(()->System.out.println("我是任务"+ finale));
-        }
-        workTaskQueue.submit();
-
-    }
-
 }

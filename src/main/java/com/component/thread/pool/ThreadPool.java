@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadPool {
 
-    private static final ThreadPool DEFAULT_THREAD_POOL = new ThreadPool(
+    public static final ThreadPool DEFAULT_THREAD_POOL = new ThreadPool(
         new ThreadPoolProperties());
 
     private static final String THREAD_GROUP_NAME = "default-worker-task-group";
